@@ -5,9 +5,18 @@ import {
   calcMinutesLeft,
 } from "../../utils/helpers";
 import OrderItem from "./OrderItem";
+import { useFetcher } from "react-router-dom";
+import { useEffect } from "react";
+import UpdateOrder from "./UpdateOrder";
 
 function Order() {
   const { order } = useLoaderData();
+  const fetchOrder = useFetcher();
+
+  useEffect(() => {
+    if (!fetchOrder.data && fetchOrder.state === "idle")
+      fetchOrder.load("/menu");
+  }, [fetchOrder]);
 
   const {
     id,
@@ -50,7 +59,15 @@ function Order() {
 
       <ul className="divide-y divide-stone-200 border-t border-b">
         {cart.map((item) => (
-          <OrderItem item={item} key={item.id} />
+          <OrderItem
+            item={item}
+            key={item.pizzaId}
+            isLoadingIngredients={fetchOrder.state === "loading"}
+            ingredients={
+              fetchOrder.data?.find((pizza) => pizza.id === item.pizzaId)
+                ?.ingredients ?? []
+            }
+          />
         ))}
       </ul>
 
@@ -67,6 +84,8 @@ function Order() {
           To pay on delivery: {formatCurrency(orderPrice + priorityPrice)}
         </p>
       </div>
+
+      {!priority && <UpdateOrder order={order} />}
     </div>
   );
 }
